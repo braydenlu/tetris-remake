@@ -1,0 +1,19 @@
+{
+    "scores": {
+        "Jamie": 100000,
+        "James": 75000,
+        "Janice": 5000,
+        "John": 1000000,
+        "Jerry": 500000,
+        "Jenny": 50000,
+        "Jack": 25000,
+        "Jessica": 200000,
+        "Julian": 10000,
+        "Jim": 1000
+    },
+    "handling": {
+        "arr": 1000,
+        "sdf": 100,
+        "das": 1000
+    }
+}
