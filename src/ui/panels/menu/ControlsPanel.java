@@ -2,15 +2,15 @@ package ui.panels.menu;
 
 import ui.MainFrame;
 import ui.TetrisButton;
-import ui.gamedata.Controls;
+import ui.gamedata.Control;
 import ui.panels.TetrisPanel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.Map;
 
 public class ControlsPanel extends TetrisPanel {
 
@@ -18,34 +18,21 @@ public class ControlsPanel extends TetrisPanel {
 
     JLabel title;
     JTable controlsTable;
-    JScrollPane scrollPane;
     JButton backButton;
 
-    Controls primaryControls;
-    Controls secondaryControls;
+    Map<Control, int[]> controls;
 
     public ControlsPanel(MainFrame mainFrame) {
         setBackground(Color.BLACK);
         setLayout(new BorderLayout());
         this.mainFrame = mainFrame;
-        primaryControls = mainFrame.getPrimaryControls();
-        secondaryControls = mainFrame.getSecondaryControls();
-
+        controls = mainFrame.getControls();
         initializeComponents();
     }
 
     private void initializeComponents() {
-        ArrayList<JComponent> components = new ArrayList<>();
         initializeTitle();
-        initializeTable();
-
-        components.add(title);
-        components.add(scrollPane);
-
-        for (JComponent c : components) {
-            c.setAlignmentX(CENTER_ALIGNMENT);
-            c.setBorder(new EmptyBorder(20, 20, 20, 20));
-        }
+        initializeControlsTable();
 
         backButton = new TetrisButton("Back");
         backButton.addActionListener(e -> notifyObservers("back"));
@@ -59,57 +46,70 @@ public class ControlsPanel extends TetrisPanel {
         title = new JLabel("Controls");
         title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
         title.setForeground(Color.WHITE);
+        title.setAlignmentX(CENTER_ALIGNMENT);
+        title.setHorizontalAlignment(SwingConstants.CENTER);
+        title.setBorder(new EmptyBorder(20,20,20,20));
     }
 
-    private void initializeTable() {
-        String[] columnTitles = {"Action", "Primary", "Secondary"};
-        String[] controlNames = {"Move Piece Left", "Move Piece Right", "Soft Drop", "Hard Drop", "Rotate Clockwise",
-                "Rotate Counterclockwise", "Rotate 180", "Swap Hold Piece", "Pause"};
+    private void initializeControlsTable() {
+        String[] columnNames = {"Action", "Primary Key", "Secondary Key"};
+        Object[][] data = new Object[controls.size()][3];
 
-        Object[] primaryControlArray = getFieldsAsArray(primaryControls);
-        Object[] secondaryControlArray = getFieldsAsArray(secondaryControls);
-
-        Object[][] controlTableData = new Object[primaryControlArray.length][3];
-
-        for (int i = 0; i < primaryControlArray.length; i++) {
-            controlTableData[i] = new Object[] {controlNames[i], primaryControlArray[i], secondaryControlArray[i]};
+        int row = 0;
+        for (Control control : controls.keySet()) {
+            int[] keyBinds = controls.get(control);
+            data[row][0] = control;
+            data[row][1] = KeyEvent.getKeyText(keyBinds[0]);
+            data[row][2] = keyBinds[1] != -1 ? KeyEvent.getKeyText(keyBinds[1]) : "";
+            row++;
         }
 
-        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+        controlsTable = new JTable(data, columnNames) {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                           boolean hasFocus, int row, int column) {
-                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setBorder(BorderFactory.createCompoundBorder(getBorder(), BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-                return this;
+            public boolean isCellEditable(int row, int column) {
+                return column != 0;  // Allow editing only in primary/secondary key columns
             }
         };
 
-        controlsTable = new JTable(controlTableData, columnTitles);
-        controlsTable.setRowHeight(60);
-        controlsTable.setDefaultRenderer(controlsTable.getColumnClass(1), renderer);
+        controlsTable.setBackground(Color.BLACK);
+        controlsTable.setForeground(Color.WHITE);
 
-        scrollPane = new JScrollPane(controlsTable);
-        scrollPane.setBorder(new EmptyBorder(20, 20, 20, 20));
+        controlsTable.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int selectedRow = controlsTable.getSelectedRow();
+                int selectedColumn = controlsTable.getSelectedColumn();
+
+                if (selectedRow != -1 && (selectedColumn == 1 || selectedColumn == 2)) {
+                    Object object = controlsTable.getValueAt(selectedRow, 0);
+                    Control control;
+                    if (object instanceof Control) {
+                        control = (Control) object;
+                    } else {
+                        throw new RuntimeException("Expected value at row" + selectedRow + " to be of type Control, " +
+                                "but found: " + object.getClass().getSimpleName());
+                    }
+                    setKeyBind(control, e.getKeyCode(), selectedColumn == 1);
+
+                    if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+                        controlsTable.setValueAt("", selectedRow, selectedColumn);
+                    } else {
+                        controlsTable.setValueAt(KeyEvent.getKeyText(e.getKeyCode()), selectedRow, selectedColumn);
+                    }
+
+                    System.out.println(controls);
+                    e.consume();
+                }
+            }
+        });
     }
 
-    private Object[] getFieldsAsArray(Object record) {
-        if (!record.getClass().isRecord()) {
-            throw new IllegalArgumentException("Not record");
+    private void setKeyBind(Control control, int keyEvent, boolean primary) {
+        int[] binds = controls.get(control);
+        if (keyEvent == KeyEvent.VK_BACK_SPACE) {
+            binds[primary ? 0 : 1] = -1;
+        } else {
+            binds[primary ? 0 : 1] = keyEvent;
         }
-
-        Field[] fields = record.getClass().getDeclaredFields();
-        Object[] fieldValues = new Object[fields.length];
-
-        try {
-            for (int i = 0; i < fields.length; i++) {
-                fields[i].setAccessible(true);
-                fieldValues[i] = fields[i].get(record);
-            }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-
-        return fieldValues;
     }
 }

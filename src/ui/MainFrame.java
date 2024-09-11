@@ -5,13 +5,13 @@ import lombok.Setter;
 import model.panels.TetrisGame;
 import model.persistence.JsonReader;
 import model.persistence.JsonWriter;
-import ui.gamedata.Controls;
+import ui.gamedata.Control;
 import ui.gamedata.Handling;
 import ui.panels.TetrisPanel;
 import ui.panels.menu.ControlsPanel;
+import ui.panels.menu.HandlingPanel;
 import ui.panels.menu.HighScoresPanel;
 import ui.panels.menu.MenuPanel;
-import ui.panels.menu.HandlingPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,11 +21,11 @@ import java.awt.event.WindowEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 public class MainFrame extends JFrame implements Observer {
 
-    @Getter Controls primaryControls;
-    @Getter Controls secondaryControls;
+    @Getter Map<Control, int[]> controls;
     @Getter @Setter Handling handling;
     private HashMap<String, Integer> scores;
 
@@ -51,9 +51,8 @@ public class MainFrame extends JFrame implements Observer {
     }
 
     private void initialize() {
-        primaryControls = new Controls(KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT, KeyEvent.VK_DOWN, KeyEvent.VK_SPACE, KeyEvent.VK_UP, KeyEvent.VK_CONTROL, KeyEvent.VK_E, KeyEvent.VK_C, KeyEvent.VK_ESCAPE);
-        secondaryControls = new Controls(null, null, null, null, KeyEvent.VK_X, KeyEvent.VK_Z, null, KeyEvent.VK_SHIFT,KeyEvent.VK_F1);
         loadData();
+        resetControls();
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -61,6 +60,19 @@ public class MainFrame extends JFrame implements Observer {
                 super.windowClosing(e);
             }
         });
+    }
+
+    private void resetControls() {
+        controls = new HashMap<>();
+        controls.put(Control.MOVE_LEFT, new int[] {KeyEvent.VK_LEFT, -1});
+        controls.put(Control.MOVE_RIGHT, new int[] {KeyEvent.VK_RIGHT, -1});
+        controls.put(Control.SOFT_DROP, new int[] {KeyEvent.VK_DOWN, -1});
+        controls.put(Control.HARD_DROP, new int[] {KeyEvent.VK_SPACE, -1});
+        controls.put(Control.ROTATE_CLOCKWISE, new int[] {KeyEvent.VK_UP, KeyEvent.VK_X});
+        controls.put(Control.ROTATE_COUNTERCLOCKWISE, new int[] {KeyEvent.VK_Z, KeyEvent.VK_CONTROL});
+        controls.put(Control.PAUSE, new int[] {KeyEvent.VK_ESCAPE, KeyEvent.VK_F1});
+        controls.put(Control.HOLD, new int[] {KeyEvent.VK_C, KeyEvent.VK_SHIFT});
+        controls.put(Control.ROTATE_180, new int[] {KeyEvent.VK_E, -1});
     }
 
     private void loadData() {

@@ -102,7 +102,7 @@ public class MovementHandler {
     // MODIFIES: This
     // EFFECTS: Updates the drop interval
     public void updateValues() {
-        if (!tetrisKeyHandler.downPressed) {
+        if (!tetrisKeyHandler.softDropPressed) {
             dropInterval = regularDropInterval;
         } else {
             if (moveIsAllowed(piece.getRotation(), piece, 0, 1)) {
@@ -116,7 +116,7 @@ public class MovementHandler {
     }
 
     public void hold() {
-        if (tetrisKeyHandler.cPressed && !gamePanel.isHoldTriggered()) {
+        if (tetrisKeyHandler.holdPressed && !gamePanel.isHoldTriggered()) {
             gamePanel.swapPiece();
         }
     }
@@ -125,10 +125,10 @@ public class MovementHandler {
     // MODIFIES: This, tetrisGame, piece
     // EFFECTS: Handles dropping the current piece
     public void drop() throws PiecePlacedException {
-        if (tetrisKeyHandler.spacePressed && !gamePanel.isHardDropHeld()) {
+        if (tetrisKeyHandler.hardDropPressed && !gamePanel.isHardDropHeld()) {
             gamePanel.setHardDropHeld(true);
             hardDrop();
-        } else if (!tetrisKeyHandler.spacePressed) {
+        } else if (!tetrisKeyHandler.hardDropPressed) {
             gamePanel.setHardDropHeld(false);
         }
 
@@ -158,9 +158,9 @@ public class MovementHandler {
 
         long currentTime = GameClock.getInstance().getGameTime();
 
-        if (tetrisKeyHandler.rightPressed) {
+        if (tetrisKeyHandler.moveRightPressed) {
             handleMove(1, currentTime);
-        } else if (tetrisKeyHandler.leftPressed) {
+        } else if (tetrisKeyHandler.moveLeftPressed) {
             handleMove(-1, currentTime);
         } else {
             rightPressedTime = leftPressedTime = 0;
@@ -285,19 +285,19 @@ public class MovementHandler {
     // EFFECTS: Handles rotating the piece when a rotation key is pressed. Prevents holding the key down from spinning
     // the piece.
     public void rotate() {
-        if (tetrisKeyHandler.dPressed) {
+        if (tetrisKeyHandler.rotateClockwisePressed) {
             if (!CWPressed) {
                 updateOrientation(1);
                 CWPressed = true;
                 CCWPressed = One80Pressed = false;
             }
-        } else if (tetrisKeyHandler.aPressed) {
+        } else if (tetrisKeyHandler.rotateCounterClockwisePressed) {
             if (!CCWPressed) {
                 updateOrientation(-1);
                 CCWPressed = true;
                 CWPressed = One80Pressed = false;
             }
-        } else if (tetrisKeyHandler.ePressed) {
+        } else if (tetrisKeyHandler.rotate180Pressed) {
             if (!One80Pressed) {
                 updateOrientation(2);
                 One80Pressed = true;
